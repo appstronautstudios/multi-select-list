@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.widget.LinearLayout;
 
+import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SearchView;
@@ -21,6 +22,9 @@ public class MultiSelectFilterView<T> extends LinearLayout {
     private SearchView searchView;
     private RecyclerView recyclerView;
     private MultiSelectFilterAdapter<T> adapter;
+    private Integer customCheckOnResId = null;
+    private Integer customCheckOffResId = null;
+    private Integer customHighlightColour = null;
 
     public MultiSelectFilterView(@NonNull Context context) {
         super(context);
@@ -62,11 +66,46 @@ public class MultiSelectFilterView<T> extends LinearLayout {
 
     public void setItems(List<SelectableItem<T>> items, MultiSelectFilterAdapter.OnSelectionChangedListener<T> listener) {
         adapter = new MultiSelectFilterAdapter<>(items, listener);
+
+        // Apply stored styles in case set items was called before styling options by client
+        if (customCheckOnResId != null) {
+            adapter.setCheckOnIcon(customCheckOnResId);
+        }
+        if (customCheckOffResId != null) {
+            adapter.setCheckOffIcon(customCheckOffResId);
+        }
+        if (customHighlightColour != null) {
+            adapter.setHighlightColor(customHighlightColour);
+        }
+
         recyclerView.setAdapter(adapter);
     }
 
+    public void setCheckOnIcon(@DrawableRes int resId) {
+        this.customCheckOnResId = resId;
+
+        // If adapter is already created, apply style immediately
+        if (adapter != null) {
+            adapter.setCheckOnIcon(resId);
+        }
+    }
+
+    public void setCheckOffIcon(@DrawableRes int resId) {
+        this.customCheckOffResId = resId;
+
+        // If adapter is already created, apply style immediately
+        if (adapter != null) {
+            adapter.setCheckOffIcon(resId);
+        }
+    }
+
     public void setHighlightColor(int color) {
-        if (adapter != null) adapter.setHighlightColor(color);
+        this.customHighlightColour = color;
+
+        // If adapter is already created, apply style immediately
+        if (adapter != null) {
+            adapter.setHighlightColor(color);
+        }
     }
 
     public Set<SelectableItem<T>> getSelectedItems() {

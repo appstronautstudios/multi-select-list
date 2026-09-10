@@ -8,6 +8,7 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.appstronautstudios.multiselectlist.adapter.MultiSelectFilterAdapter;
 import com.appstronautstudios.multiselectlist.model.SelectableItem;
@@ -26,47 +27,28 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // fake foods
-        ArrayList<Food> allFoods = getFoodsFake();
-
         selectedItemsTV = findViewById(R.id.selected_items);
 
         Button editButton = findViewById(R.id.selected_items_btn);
+        Button editCustomIconButton = findViewById(R.id.selected_items_custom_icon_btn);
+        Button editCustomHighlightButton = findViewById(R.id.selected_items_custom_highlight_btn);
+
         editButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Create items from foods, passing true if already in selectedFoods
-                ArrayList<SelectableItem<Food>> items = new ArrayList<>();
-                for (Food food : allFoods) {
-                    boolean isSelected = isFoodSelected(food);
-                    items.add(new SelectableItem<>(food, food.name, isSelected));
-                }
-
-                // Add items to filter view
-                MultiSelectFilterView<Food> view = new MultiSelectFilterView<>(MainActivity.this);
-                view.setItems(items, new MultiSelectFilterAdapter.OnSelectionChangedListener<Food>() {
-                    @Override
-                    public void onSelectionChanged(Set<SelectableItem<Food>> selectedItems) {
-                        selectedFoods = new ArrayList<>();
-                        for (SelectableItem<Food> selectableItem : selectedItems) {
-                            selectedFoods.add(selectableItem.getData());
-                        }
-                        configureSelectedFoods();
-                    }
-                });
-
-                // Show as part of dialogue
-                new AlertDialog.Builder(MainActivity.this)
-                        .setTitle("Select all that apply")
-                        .setView(view)
-                        .setPositiveButton("Done", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.dismiss();
-                            }
-                        })
-                        .create()
-                        .show();
+                showSelectionPrompt(false, false, false);
+            }
+        });
+        editCustomIconButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showSelectionPrompt(true, true, false);
+            }
+        });
+        editCustomHighlightButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showSelectionPrompt(false, false, true);
             }
         });
     }
@@ -86,6 +68,50 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return false;
+    }
+
+    private void showSelectionPrompt(boolean customOnIcon, boolean customOffIcon, boolean customHighlight) {
+        // fake foods
+        ArrayList<Food> allFoods = getFoodsFake();
+
+        // Create items from foods, passing true if already in selectedFoods
+        ArrayList<SelectableItem<Food>> items = new ArrayList<>();
+        for (Food food : allFoods) {
+            boolean isSelected = isFoodSelected(food);
+            items.add(new SelectableItem<>(food, food.name, isSelected));
+        }
+
+        // Add items to filter view
+        MultiSelectFilterView<Food> view = new MultiSelectFilterView<>(MainActivity.this);
+        if (customOnIcon)
+            view.setCheckOnIcon(R.drawable.check_box_24px);
+        if (customOffIcon)
+            view.setCheckOffIcon(R.drawable.check_box_outline_blank_24px);
+        if (customHighlight)
+            view.setHighlightColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_orange_dark));
+        view.setItems(items, new MultiSelectFilterAdapter.OnSelectionChangedListener<Food>() {
+            @Override
+            public void onSelectionChanged(Set<SelectableItem<Food>> selectedItems) {
+                selectedFoods = new ArrayList<>();
+                for (SelectableItem<Food> selectableItem : selectedItems) {
+                    selectedFoods.add(selectableItem.getData());
+                }
+                configureSelectedFoods();
+            }
+        });
+
+        // Show as part of dialogue
+        new AlertDialog.Builder(MainActivity.this)
+                .setTitle("Select all that apply")
+                .setView(view)
+                .setPositiveButton("Done", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                })
+                .create()
+                .show();
     }
 
     private ArrayList<Food> getFoodsFake() {

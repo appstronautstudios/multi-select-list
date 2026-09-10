@@ -1,10 +1,10 @@
 package com.appstronautstudios.multiselectlist.adapter;
 
-import android.content.res.ColorStateList;
 import android.graphics.Typeface;
 import android.text.Spannable;
 import android.text.SpannableString;
-import android.text.style.TextAppearanceSpan;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.ColorInt;
+import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -28,29 +29,42 @@ import java.util.Locale;
 import java.util.Set;
 
 
-public class MultiSelectFilterAdapter<T>
-        extends RecyclerView.Adapter<MultiSelectFilterAdapter.ViewHolder>
-        implements Filterable {
-
-    public interface OnSelectionChangedListener<T> {
-        void onSelectionChanged(Set<SelectableItem<T>> selectedItems);
-    }
+public class MultiSelectFilterAdapter<T> extends RecyclerView.Adapter<MultiSelectFilterAdapter.ViewHolder> implements Filterable {
 
     private final List<SelectableItem<T>> originalList;
     private List<SelectableItem<T>> displayList;
     private final OnSelectionChangedListener<T> listener;
     private String currentQuery = "";
+    @DrawableRes
+    private Integer checkOnResId = null;
+    @DrawableRes
+    private Integer checkOffResId = null;
     private @ColorInt Integer highlightColor = null;
+
+    public void setCheckOnIcon(@DrawableRes int resId) {
+        this.checkOnResId = resId;
+        notifyDataSetChanged();
+    }
+
+    public void setCheckOffIcon(@DrawableRes int resId) {
+        this.checkOffResId = resId;
+        notifyDataSetChanged();
+    }
+
+    public void setHighlightColor(@ColorInt int color) {
+        this.highlightColor = color;
+        notifyDataSetChanged();
+    }
+
+    public interface OnSelectionChangedListener<T> {
+        void onSelectionChanged(Set<SelectableItem<T>> selectedItems);
+    }
 
     public MultiSelectFilterAdapter(List<SelectableItem<T>> items, OnSelectionChangedListener<T> listener) {
         this.originalList = new ArrayList<>(items);
         this.displayList = new ArrayList<>(items);
         this.listener = listener;
         sortSelectedToTop();
-    }
-
-    public void setHighlightColor(@ColorInt int color) {
-        this.highlightColor = color;
     }
 
     public void updateData(List<SelectableItem<T>> newItems) {
@@ -118,12 +132,22 @@ public class MultiSelectFilterAdapter<T>
 
         // Highlight matching query string
         if (!currentQuery.isEmpty() && highlightColor != null) {
-            int startPos = name.toLowerCase(Locale.getDefault()).indexOf(currentQuery.toLowerCase(Locale.getDefault()));
+            String lowerName = name.toLowerCase(Locale.getDefault());
+            String lowerQuery = currentQuery.toLowerCase(Locale.getDefault());
+
+            int startPos = lowerName.indexOf(lowerQuery);
             if (startPos != -1) {
                 Spannable spannable = new SpannableString(name);
-                ColorStateList colorStateList = ColorStateList.valueOf(highlightColor);
-                spannable.setSpan(new TextAppearanceSpan(null, Typeface.BOLD, -1, colorStateList, null),
-                        startPos, startPos + currentQuery.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                int endPos = startPos + currentQuery.length();
+
+                // 1. Use ForegroundColorSpan instead of TextAppearanceSpan for reliable coloring
+                spannable.setSpan(new ForegroundColorSpan(highlightColor),
+                        startPos, endPos, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                // 2. Bold style set separately if desired
+                spannable.setSpan(new StyleSpan(Typeface.BOLD),
+                        startPos, endPos, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
                 holder.tvName.setText(spannable);
             } else {
                 holder.tvName.setText(name);
@@ -132,19 +156,27 @@ public class MultiSelectFilterAdapter<T>
             holder.tvName.setText(name);
         }
 
-        // Toggle Checkmark Visibility
+        // Toggle Checkmark Visibility and Icon
         if (holder.ivCheck != null) {
-            holder.ivCheck.setVisibility(item.isSelected() ? View.VISIBLE : View.INVISIBLE);
+            if (item.isSelected()) {
+                holder.ivCheck.setVisibility(View.VISIBLE);
+                if (checkOnResId != null) {
+                    holder.ivCheck.setImageResource(checkOnResId);
+                }
+            } else {
+                // If has an off icon show that. Otherwise, hide icon entirely
+                if (checkOffResId != null) {
+                    holder.ivCheck.setVisibility(View.VISIBLE);
+                    holder.ivCheck.setImageResource(checkOffResId);
+                } else {
+                    holder.ivCheck.setVisibility(View.INVISIBLE);
+                }
+            }
         }
 
         holder.itemView.setOnClickListener(v -> {
-            // 1. Toggle selection state
             item.setSelected(!item.isSelected());
-
-            // 2. Re-sort entire list (Selected at top, unselected alphabetical below)
             sortSelectedToTop();
-
-            // 3. Notify external listener
             if (listener != null) {
                 listener.onSelectionChanged(getSelectedItems());
             }
