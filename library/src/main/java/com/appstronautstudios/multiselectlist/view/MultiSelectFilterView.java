@@ -2,6 +2,7 @@ package com.appstronautstudios.multiselectlist.view;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.view.View;
 import android.widget.LinearLayout;
 
 import androidx.annotation.DrawableRes;
@@ -25,6 +26,7 @@ public class MultiSelectFilterView<T> extends LinearLayout {
     private Integer customCheckOnResId = null;
     private Integer customCheckOffResId = null;
     private Integer customHighlightColour = null;
+    private boolean sortSelectedToTop = false;
 
     public MultiSelectFilterView(@NonNull Context context) {
         super(context);
@@ -39,7 +41,6 @@ public class MultiSelectFilterView<T> extends LinearLayout {
     private void init(Context context) {
         setOrientation(VERTICAL);
 
-        // Dynamically program layout elements
         searchView = new SearchView(context);
         searchView.setIconifiedByDefault(false);
 
@@ -65,9 +66,10 @@ public class MultiSelectFilterView<T> extends LinearLayout {
     }
 
     public void setItems(List<SelectableItem<T>> items, MultiSelectFilterAdapter.OnSelectionChangedListener<T> listener) {
-        adapter = new MultiSelectFilterAdapter<>(items, listener);
+        // Pass sortSelectedToTop directly to constructor so initial sorting honors the setting
+        adapter = new MultiSelectFilterAdapter<>(items, listener, sortSelectedToTop);
 
-        // Apply stored styles in case set items was called before styling options by client
+        // Apply stored configs
         if (customCheckOnResId != null) {
             adapter.setCheckOnIcon(customCheckOnResId);
         }
@@ -83,28 +85,27 @@ public class MultiSelectFilterView<T> extends LinearLayout {
 
     public void setCheckOnIcon(@DrawableRes int resId) {
         this.customCheckOnResId = resId;
-
-        // If adapter is already created, apply style immediately
-        if (adapter != null) {
-            adapter.setCheckOnIcon(resId);
-        }
+        if (adapter != null) adapter.setCheckOnIcon(resId);
     }
 
     public void setCheckOffIcon(@DrawableRes int resId) {
         this.customCheckOffResId = resId;
-
-        // If adapter is already created, apply style immediately
-        if (adapter != null) {
-            adapter.setCheckOffIcon(resId);
-        }
+        if (adapter != null) adapter.setCheckOffIcon(resId);
     }
 
     public void setHighlightColor(int color) {
         this.customHighlightColour = color;
+        if (adapter != null) adapter.setHighlightColor(color);
+    }
 
-        // If adapter is already created, apply style immediately
+    public void setSearchVisible(boolean visible) {
+        searchView.setVisibility(visible ? View.VISIBLE : View.GONE);
+    }
+
+    public void setSortSelectedToTop(boolean enable) {
+        this.sortSelectedToTop = enable;
         if (adapter != null) {
-            adapter.setHighlightColor(color);
+            adapter.setSortSelectedToTop(enable);
         }
     }
 

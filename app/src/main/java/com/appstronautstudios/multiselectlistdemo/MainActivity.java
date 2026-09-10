@@ -10,7 +10,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
-import com.appstronautstudios.multiselectlist.adapter.MultiSelectFilterAdapter;
 import com.appstronautstudios.multiselectlist.model.SelectableItem;
 import com.appstronautstudios.multiselectlist.view.MultiSelectFilterView;
 
@@ -32,23 +31,37 @@ public class MainActivity extends AppCompatActivity {
         Button editButton = findViewById(R.id.selected_items_btn);
         Button editCustomIconButton = findViewById(R.id.selected_items_custom_icon_btn);
         Button editCustomHighlightButton = findViewById(R.id.selected_items_custom_highlight_btn);
+        Button noSearchButton = findViewById(R.id.no_search_btn);
+        Button sortToTopButton = findViewById(R.id.sort_to_top_btn);
 
         editButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showSelectionPrompt(false, false, false);
+                showSelectionPrompt(false, false, false, true, false);
             }
         });
         editCustomIconButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showSelectionPrompt(true, true, false);
+                showSelectionPrompt(true, true, false, true, false);
             }
         });
         editCustomHighlightButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showSelectionPrompt(false, false, true);
+                showSelectionPrompt(false, false, true, true, false);
+            }
+        });
+        noSearchButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showSelectionPrompt(false, false, false, false, false);
+            }
+        });
+        sortToTopButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showSelectionPrompt(false, false, false, true, true);
             }
         });
     }
@@ -70,46 +83,49 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-    private void showSelectionPrompt(boolean customOnIcon, boolean customOffIcon, boolean customHighlight) {
-        // fake foods
+    private void showSelectionPrompt(boolean customOnIcon, boolean customOffIcon, boolean customHighlight, boolean searchOn, boolean sortToTop) {
         ArrayList<Food> allFoods = getFoodsFake();
 
-        // Create items from foods, passing true if already in selectedFoods
         ArrayList<SelectableItem<Food>> items = new ArrayList<>();
         for (Food food : allFoods) {
-            boolean isSelected = isFoodSelected(food);
-            items.add(new SelectableItem<>(food, food.name, isSelected));
+            items.add(new SelectableItem<>(food, food.name, isFoodSelected(food)));
         }
 
-        // Add items to filter view
         MultiSelectFilterView<Food> view = new MultiSelectFilterView<>(MainActivity.this);
-        if (customOnIcon)
+        if (customOnIcon) {
             view.setCheckOnIcon(R.drawable.check_box_24px);
-        if (customOffIcon)
+        }
+        if (customOffIcon) {
             view.setCheckOffIcon(R.drawable.check_box_outline_blank_24px);
-        if (customHighlight)
+        }
+        if (customHighlight) {
             view.setHighlightColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_orange_dark));
-        view.setItems(items, new MultiSelectFilterAdapter.OnSelectionChangedListener<Food>() {
-            @Override
-            public void onSelectionChanged(Set<SelectableItem<Food>> selectedItems) {
-                selectedFoods = new ArrayList<>();
-                for (SelectableItem<Food> selectableItem : selectedItems) {
-                    selectedFoods.add(selectableItem.getData());
-                }
-                configureSelectedFoods();
-            }
-        });
+        }
+        view.setSearchVisible(searchOn);
+        view.setSortSelectedToTop(sortToTop);
 
-        // Show as part of dialogue
+        // Pass null for listener so clicks only toggle internal UI state without mutating activity data immediately
+        view.setItems(items, null);
+
         new AlertDialog.Builder(MainActivity.this)
                 .setTitle("Select all that apply")
                 .setView(view)
                 .setPositiveButton("Done", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+                        // Update main selected foods ONLY when user confirms
+                        selectedFoods = new ArrayList<>();
+                        Set<SelectableItem<Food>> selected = view.getSelectedItems();
+                        if (selected != null) {
+                            for (SelectableItem<Food> item : selected) {
+                                selectedFoods.add(item.getData());
+                            }
+                        }
+                        configureSelectedFoods();
                         dialog.dismiss();
                     }
                 })
+                .setNegativeButton("Cancel", null)
                 .create()
                 .show();
     }

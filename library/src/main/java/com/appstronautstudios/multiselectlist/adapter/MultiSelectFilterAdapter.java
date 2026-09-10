@@ -28,18 +28,28 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-
 public class MultiSelectFilterAdapter<T> extends RecyclerView.Adapter<MultiSelectFilterAdapter.ViewHolder> implements Filterable {
 
     private final List<SelectableItem<T>> originalList;
     private List<SelectableItem<T>> displayList;
     private final OnSelectionChangedListener<T> listener;
     private String currentQuery = "";
+
     @DrawableRes
     private Integer checkOnResId = null;
     @DrawableRes
     private Integer checkOffResId = null;
     private @ColorInt Integer highlightColor = null;
+    private boolean sortSelectedToTop = false;
+
+    public interface OnSelectionChangedListener<T> {
+        void onSelectionChanged(Set<SelectableItem<T>> selectedItems);
+    }
+
+    public void setSortSelectedToTop(boolean enable) {
+        this.sortSelectedToTop = enable;
+        applySort();
+    }
 
     public void setCheckOnIcon(@DrawableRes int resId) {
         this.checkOnResId = resId;
@@ -56,22 +66,23 @@ public class MultiSelectFilterAdapter<T> extends RecyclerView.Adapter<MultiSelec
         notifyDataSetChanged();
     }
 
-    public interface OnSelectionChangedListener<T> {
-        void onSelectionChanged(Set<SelectableItem<T>> selectedItems);
+    public MultiSelectFilterAdapter(List<SelectableItem<T>> items, OnSelectionChangedListener<T> listener) {
+        this(items, listener, true);
     }
 
-    public MultiSelectFilterAdapter(List<SelectableItem<T>> items, OnSelectionChangedListener<T> listener) {
+    public MultiSelectFilterAdapter(List<SelectableItem<T>> items, OnSelectionChangedListener<T> listener, boolean sortSelectedToTop) {
         this.originalList = new ArrayList<>(items);
         this.displayList = new ArrayList<>(items);
         this.listener = listener;
-        sortSelectedToTop();
+        this.sortSelectedToTop = sortSelectedToTop;
+        applySort(); // Ensures initial sorting respects sortSelectedToTop
     }
 
     public void updateData(List<SelectableItem<T>> newItems) {
         this.originalList.clear();
         this.originalList.addAll(newItems);
         this.displayList = new ArrayList<>(newItems);
-        sortSelectedToTop();
+        applySort();
     }
 
     public Set<SelectableItem<T>> getSelectedItems() {
@@ -88,21 +99,23 @@ public class MultiSelectFilterAdapter<T> extends RecyclerView.Adapter<MultiSelec
         for (SelectableItem<T> item : originalList) {
             item.setSelected(false);
         }
-        sortSelectedToTop();
+        applySort();
         if (listener != null) {
             listener.onSelectionChanged(getSelectedItems());
         }
     }
 
-    public void sortSelectedToTop() {
-        Collections.sort(displayList, (o1, o2) -> {
-            // If selection states differ, put selected item higher (-1)
-            if (o1.isSelected() != o2.isSelected()) {
-                return o1.isSelected() ? -1 : 1;
-            }
-            // If selection states are identical, sort alphabetically by name
-            return o1.getName().compareToIgnoreCase(o2.getName());
-        });
+    public void applySort() {
+        if (sortSelectedToTop) {
+            Collections.sort(displayList, (o1, o2) -> {
+                // If selection states differ, put selected item higher (-1)
+                if (o1.isSelected() != o2.isSelected()) {
+                    return o1.isSelected() ? -1 : 1;
+                }
+                // If selection states are identical, sort alphabetically by name
+                return o1.getName().compareToIgnoreCase(o2.getName());
+            });
+        }
         notifyDataSetChanged();
     }
 
@@ -176,7 +189,13 @@ public class MultiSelectFilterAdapter<T> extends RecyclerView.Adapter<MultiSelec
 
         holder.itemView.setOnClickListener(v -> {
             item.setSelected(!item.isSelected());
-            sortSelectedToTop();
+
+            if (sortSelectedToTop) {
+                applySort();
+            } else {
+                notifyItemChanged(holder.getBindingAdapterPosition());
+            }
+
             if (listener != null) {
                 listener.onSelectionChanged(getSelectedItems());
             }
@@ -218,7 +237,7 @@ public class MultiSelectFilterAdapter<T> extends RecyclerView.Adapter<MultiSelec
             @Override
             protected void publishResults(CharSequence constraint, FilterResults results) {
                 displayList = (List<SelectableItem<T>>) results.values;
-                sortSelectedToTop();
+                applySort();
             }
         };
     }
