@@ -13,12 +13,11 @@ import android.widget.Filterable;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.annotation.ColorInt;
-import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.appstronautstudios.multiselectlist.R;
+import com.appstronautstudios.multiselectlist.model.MultiSelectFilterConfig;
 import com.appstronautstudios.multiselectlist.model.SelectableItem;
 
 import java.util.ArrayList;
@@ -35,46 +34,17 @@ public class MultiSelectFilterAdapter<T> extends RecyclerView.Adapter<MultiSelec
     private final OnSelectionChangedListener<T> listener;
     private String currentQuery = "";
 
-    @DrawableRes
-    private Integer checkOnResId = null;
-    @DrawableRes
-    private Integer checkOffResId = null;
-    private @ColorInt Integer highlightColor = null;
-    private boolean sortSelectedToTop = false;
+    private MultiSelectFilterConfig config;
 
     public interface OnSelectionChangedListener<T> {
         void onSelectionChanged(Set<SelectableItem<T>> selectedItems);
     }
 
-    public void setSortSelectedToTop(boolean enable) {
-        this.sortSelectedToTop = enable;
-        applySort();
-    }
-
-    public void setCheckOnIcon(@DrawableRes int resId) {
-        this.checkOnResId = resId;
-        notifyDataSetChanged();
-    }
-
-    public void setCheckOffIcon(@DrawableRes int resId) {
-        this.checkOffResId = resId;
-        notifyDataSetChanged();
-    }
-
-    public void setHighlightColor(@ColorInt int color) {
-        this.highlightColor = color;
-        notifyDataSetChanged();
-    }
-
-    public MultiSelectFilterAdapter(List<SelectableItem<T>> items, OnSelectionChangedListener<T> listener) {
-        this(items, listener, true);
-    }
-
-    public MultiSelectFilterAdapter(List<SelectableItem<T>> items, OnSelectionChangedListener<T> listener, boolean sortSelectedToTop) {
+    public MultiSelectFilterAdapter(List<SelectableItem<T>> items, OnSelectionChangedListener<T> listener, MultiSelectFilterConfig config) {
         this.originalList = new ArrayList<>(items);
         this.displayList = new ArrayList<>(items);
         this.listener = listener;
-        this.sortSelectedToTop = sortSelectedToTop;
+        this.config = config;
         applySort(); // Ensures initial sorting respects sortSelectedToTop
     }
 
@@ -106,7 +76,7 @@ public class MultiSelectFilterAdapter<T> extends RecyclerView.Adapter<MultiSelec
     }
 
     public void applySort() {
-        if (sortSelectedToTop) {
+        if (config.sortSelectedToTop) {
             Collections.sort(displayList, (o1, o2) -> {
                 // If selection states differ, put selected item higher (-1)
                 if (o1.isSelected() != o2.isSelected()) {
@@ -144,7 +114,7 @@ public class MultiSelectFilterAdapter<T> extends RecyclerView.Adapter<MultiSelec
         String name = item.getName();
 
         // Highlight matching query string
-        if (!currentQuery.isEmpty() && highlightColor != null) {
+        if (!currentQuery.isEmpty() && config.highlightColour != null) {
             String lowerName = name.toLowerCase(Locale.getDefault());
             String lowerQuery = currentQuery.toLowerCase(Locale.getDefault());
 
@@ -154,7 +124,7 @@ public class MultiSelectFilterAdapter<T> extends RecyclerView.Adapter<MultiSelec
                 int endPos = startPos + currentQuery.length();
 
                 // 1. Use ForegroundColorSpan instead of TextAppearanceSpan for reliable coloring
-                spannable.setSpan(new ForegroundColorSpan(highlightColor),
+                spannable.setSpan(new ForegroundColorSpan(config.highlightColour),
                         startPos, endPos, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
                 // 2. Bold style set separately if desired
@@ -173,14 +143,14 @@ public class MultiSelectFilterAdapter<T> extends RecyclerView.Adapter<MultiSelec
         if (holder.ivCheck != null) {
             if (item.isSelected()) {
                 holder.ivCheck.setVisibility(View.VISIBLE);
-                if (checkOnResId != null) {
-                    holder.ivCheck.setImageResource(checkOnResId);
+                if (config.checkOnResId != null) {
+                    holder.ivCheck.setImageResource(config.checkOnResId);
                 }
             } else {
                 // If has an off icon show that. Otherwise, hide icon entirely
-                if (checkOffResId != null) {
+                if (config.checkOffResId != null) {
                     holder.ivCheck.setVisibility(View.VISIBLE);
-                    holder.ivCheck.setImageResource(checkOffResId);
+                    holder.ivCheck.setImageResource(config.checkOffResId);
                 } else {
                     holder.ivCheck.setVisibility(View.INVISIBLE);
                 }
@@ -190,7 +160,7 @@ public class MultiSelectFilterAdapter<T> extends RecyclerView.Adapter<MultiSelec
         holder.itemView.setOnClickListener(v -> {
             item.setSelected(!item.isSelected());
 
-            if (sortSelectedToTop) {
+            if (config.sortSelectedToTop) {
                 applySort();
             } else {
                 notifyItemChanged(holder.getBindingAdapterPosition());

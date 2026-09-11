@@ -48,6 +48,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Sort To Top" />
+
+        <Button
+            android:id="@+id/divider_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Custom Divider" />
     </LinearLayout>
 
     <TextView

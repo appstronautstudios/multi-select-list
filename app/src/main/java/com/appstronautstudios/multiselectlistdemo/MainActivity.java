@@ -1,6 +1,7 @@
 package com.appstronautstudios.multiselectlistdemo;
 
 import android.content.DialogInterface;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -33,35 +34,42 @@ public class MainActivity extends AppCompatActivity {
         Button editCustomHighlightButton = findViewById(R.id.selected_items_custom_highlight_btn);
         Button noSearchButton = findViewById(R.id.no_search_btn);
         Button sortToTopButton = findViewById(R.id.sort_to_top_btn);
+        Button customDividerButton = findViewById(R.id.divider_btn);
 
         editButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showSelectionPrompt(false, false, false, true, false);
+                showSelectionPrompt(false, false, false, true, false, false);
             }
         });
         editCustomIconButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showSelectionPrompt(true, true, false, true, false);
+                showSelectionPrompt(true, true, false, true, false, false);
             }
         });
         editCustomHighlightButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showSelectionPrompt(false, false, true, true, false);
+                showSelectionPrompt(false, false, true, true, false, false);
             }
         });
         noSearchButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showSelectionPrompt(false, false, false, false, false);
+                showSelectionPrompt(false, false, false, false, false, false);
             }
         });
         sortToTopButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showSelectionPrompt(false, false, false, true, true);
+                showSelectionPrompt(false, false, false, true, true, false);
+            }
+        });
+        customDividerButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showSelectionPrompt(false, false, false, true, false, true);
             }
         });
     }
@@ -83,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-    private void showSelectionPrompt(boolean customOnIcon, boolean customOffIcon, boolean customHighlight, boolean searchOn, boolean sortToTop) {
+    private void showSelectionPrompt(boolean customOnIcon, boolean customOffIcon, boolean customHighlight, boolean searchOn, boolean sortToTop, boolean customDivider) {
         ArrayList<Food> allFoods = getFoodsFake();
 
         ArrayList<SelectableItem<Food>> items = new ArrayList<>();
@@ -103,6 +111,12 @@ public class MainActivity extends AppCompatActivity {
         }
         view.setSearchVisible(searchOn);
         view.setSortSelectedToTop(sortToTop);
+        if (customDivider) {
+            view.setDividerColour(Color.BLACK);
+            view.setDividerHeightDp(2);
+            view.setDividerPaddingLeftDp(16);
+            view.setDividerPaddingRightDp(16);
+        }
 
         // Pass null for listener so clicks only toggle internal UI state without mutating activity data immediately
         view.setItems(items, null);

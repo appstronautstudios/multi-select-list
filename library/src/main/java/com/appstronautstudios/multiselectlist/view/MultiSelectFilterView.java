@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.appstronautstudios.multiselectlist.adapter.MultiSelectFilterAdapter;
+import com.appstronautstudios.multiselectlist.model.MultiSelectFilterConfig;
 import com.appstronautstudios.multiselectlist.model.SelectableItem;
 
 import java.util.List;
@@ -23,10 +24,8 @@ public class MultiSelectFilterView<T> extends LinearLayout {
     private SearchView searchView;
     private RecyclerView recyclerView;
     private MultiSelectFilterAdapter<T> adapter;
-    private Integer customCheckOnResId = null;
-    private Integer customCheckOffResId = null;
-    private Integer customHighlightColour = null;
-    private boolean sortSelectedToTop = false;
+
+    private final MultiSelectFilterConfig config = new MultiSelectFilterConfig();
 
     public MultiSelectFilterView(@NonNull Context context) {
         super(context);
@@ -46,6 +45,9 @@ public class MultiSelectFilterView<T> extends LinearLayout {
 
         recyclerView = new RecyclerView(context);
         recyclerView.setLayoutManager(new LinearLayoutManager(context));
+
+        // Attach the custom ItemDecoration once
+        recyclerView.addItemDecoration(new ConfigurableDividerItemDecoration(config));
 
         addView(searchView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
         addView(recyclerView, new LayoutParams(LayoutParams.MATCH_PARENT, 0, 1.0f));
@@ -67,35 +69,47 @@ public class MultiSelectFilterView<T> extends LinearLayout {
 
     public void setItems(List<SelectableItem<T>> items, MultiSelectFilterAdapter.OnSelectionChangedListener<T> listener) {
         // Pass sortSelectedToTop directly to constructor so initial sorting honors the setting
-        adapter = new MultiSelectFilterAdapter<>(items, listener, sortSelectedToTop);
-
-        // Apply stored configs
-        if (customCheckOnResId != null) {
-            adapter.setCheckOnIcon(customCheckOnResId);
-        }
-        if (customCheckOffResId != null) {
-            adapter.setCheckOffIcon(customCheckOffResId);
-        }
-        if (customHighlightColour != null) {
-            adapter.setHighlightColor(customHighlightColour);
-        }
-
+        adapter = new MultiSelectFilterAdapter<>(items, listener, config);
         recyclerView.setAdapter(adapter);
     }
 
+    public MultiSelectFilterConfig getConfig() {
+        return config;
+    }
+
     public void setCheckOnIcon(@DrawableRes int resId) {
-        this.customCheckOnResId = resId;
-        if (adapter != null) adapter.setCheckOnIcon(resId);
+        config.checkOnResId = resId;
+        if (adapter != null) adapter.notifyDataSetChanged();
     }
 
     public void setCheckOffIcon(@DrawableRes int resId) {
-        this.customCheckOffResId = resId;
-        if (adapter != null) adapter.setCheckOffIcon(resId);
+        config.checkOffResId = resId;
+        if (adapter != null) adapter.notifyDataSetChanged();
     }
 
     public void setHighlightColor(int color) {
-        this.customHighlightColour = color;
-        if (adapter != null) adapter.setHighlightColor(color);
+        config.highlightColour = color;
+        if (adapter != null) adapter.notifyDataSetChanged();
+    }
+
+    public void setDividerColour(int colour) {
+        config.setDividerColour(colour);
+        recyclerView.invalidateItemDecorations(); // Refreshes item offsets & redraws
+    }
+
+    public void setDividerHeightDp(int height) {
+        config.setDividerHeight(height);
+        recyclerView.invalidateItemDecorations(); // Refreshes item offsets & redraws
+    }
+
+    public void setDividerPaddingLeftDp(int left) {
+        config.setDividerPaddingLeft(left);
+        recyclerView.invalidateItemDecorations();
+    }
+
+    public void setDividerPaddingRightDp(int right) {
+        config.setDividerPaddingRight(right);
+        recyclerView.invalidateItemDecorations();
     }
 
     public void setSearchVisible(boolean visible) {
@@ -103,10 +117,8 @@ public class MultiSelectFilterView<T> extends LinearLayout {
     }
 
     public void setSortSelectedToTop(boolean enable) {
-        this.sortSelectedToTop = enable;
-        if (adapter != null) {
-            adapter.setSortSelectedToTop(enable);
-        }
+        config.sortSelectedToTop = enable;
+        if (adapter != null) adapter.notifyDataSetChanged();
     }
 
     public Set<SelectableItem<T>> getSelectedItems() {
