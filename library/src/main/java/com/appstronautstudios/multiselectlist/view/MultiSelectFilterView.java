@@ -46,14 +46,45 @@ public class MultiSelectFilterView<T> extends LinearLayout {
 
         searchView = new SearchView(context);
         searchView.setIconifiedByDefault(false);
+        searchView.setQueryHint(getContext().getString(androidx.appcompat.R.string.abc_search_hint));
+
+        // 1. Remove legacy underline & background artifacts inside SearchView
+        View searchPlate = searchView.findViewById(androidx.appcompat.R.id.search_plate);
+        if (searchPlate != null) {
+            searchPlate.setBackground(null);
+        }
+
+        // 2. Remove default inset margins so content aligns flush to edges
+        View searchEditFrame = searchView.findViewById(androidx.appcompat.R.id.search_edit_frame);
+        if (searchEditFrame != null && searchEditFrame.getLayoutParams() instanceof MarginLayoutParams) {
+            MarginLayoutParams params = (MarginLayoutParams) searchEditFrame.getLayoutParams();
+            params.leftMargin = 0;
+            params.rightMargin = 0;
+            searchEditFrame.setLayoutParams(params);
+        }
+
+        // 3. Match horizontal padding to list items (16dp default)
+        float density = context.getResources().getDisplayMetrics().density;
+        int padH = (int) (config.paddingHorizontal * density); // Default 16dp
+        int padV = (int) (6 * density);
+        searchView.setPadding(padH, padV, padH, padV);
+
+        // 4. Modern rounded background for the search field
+        android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
+        bg.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
+        bg.setCornerRadius(8 * density);
+        bg.setColor(android.graphics.Color.parseColor("#F1F3F4")); // Subtle light gray background
+        searchView.setBackground(bg);
+
+        // 5. Wrap searchView inside a container with margins to separate it from list
+        LinearLayout.LayoutParams searchParams = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        searchParams.setMargins((int) (8 * density), (int) (8 * density), (int) (8 * density), (int) (8 * density));
 
         recyclerView = new RecyclerView(context);
         recyclerView.setLayoutManager(new LinearLayoutManager(context));
-
-        // Attach the custom ItemDecoration once
         recyclerView.addItemDecoration(new ConfigurableDividerItemDecoration(config));
 
-        addView(searchView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+        addView(searchView, searchParams);
         addView(recyclerView, new LayoutParams(LayoutParams.MATCH_PARENT, 0, 1.0f));
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
