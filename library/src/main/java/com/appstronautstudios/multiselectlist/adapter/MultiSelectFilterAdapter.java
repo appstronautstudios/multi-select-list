@@ -90,8 +90,8 @@ public class MultiSelectFilterAdapter<T> extends RecyclerView.Adapter<MultiSelec
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        final TextView tvName;
-        final ImageView ivCheck;
+        public final TextView tvName;
+        public final ImageView ivCheck;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -108,9 +108,7 @@ public class MultiSelectFilterAdapter<T> extends RecyclerView.Adapter<MultiSelec
         return new ViewHolder(view);
     }
 
-    @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        SelectableItem<T> item = displayList.get(position);
+    public void bindViewHolder(@NonNull ViewHolder holder, SelectableItem<T> item) {
         String name = item.getName();
 
         // adjust padding based on user input
@@ -189,6 +187,12 @@ public class MultiSelectFilterAdapter<T> extends RecyclerView.Adapter<MultiSelec
                 listener.onSelectionChanged(getSelectedItems());
             }
         });
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        SelectableItem<T> item = displayList.get(position);
+        bindViewHolder(holder, item);
     }
 
     @Override

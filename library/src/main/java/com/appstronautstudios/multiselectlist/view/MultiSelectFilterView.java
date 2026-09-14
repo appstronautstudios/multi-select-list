@@ -3,6 +3,7 @@ package com.appstronautstudios.multiselectlist.view;
 import android.content.Context;
 import android.graphics.Typeface;
 import android.util.AttributeSet;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.LinearLayout;
 
@@ -13,10 +14,12 @@ import androidx.appcompat.widget.SearchView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.appstronautstudios.multiselectlist.R;
 import com.appstronautstudios.multiselectlist.adapter.MultiSelectFilterAdapter;
 import com.appstronautstudios.multiselectlist.model.MultiSelectFilterConfig;
 import com.appstronautstudios.multiselectlist.model.SelectableItem;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -76,6 +79,15 @@ public class MultiSelectFilterView<T> extends LinearLayout {
 
     public MultiSelectFilterConfig getConfig() {
         return config;
+    }
+
+    public void setHeaderView(View headerView) {
+        // Index 1 places the header below searchView (0) and above recyclerView
+        this.addView(headerView, 1, new LinearLayout.LayoutParams(-1, -2));
+    }
+
+    public void setFooterView(View footerView) {
+        this.addView(footerView, new LinearLayout.LayoutParams(-1, -2));
     }
 
     public void setCheckOnIcon(@DrawableRes int resId) {
@@ -138,5 +150,33 @@ public class MultiSelectFilterView<T> extends LinearLayout {
 
     public void clearSelections() {
         if (adapter != null) adapter.clearSelections();
+    }
+
+    public View createStyledCell(SelectableItem<T> item,@DrawableRes int iconResId, OnClickListener onClickListener) {
+        View itemView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_selectable, this, false);
+        MultiSelectFilterAdapter.ViewHolder holder = new MultiSelectFilterAdapter.ViewHolder(itemView);
+
+        if (adapter == null) {
+            adapter = new MultiSelectFilterAdapter<>(Collections.emptyList(), null, config);
+        }
+
+        adapter.bindViewHolder(holder, item);
+
+        // Override icon if custom iconResId is provided
+        if (iconResId != 0 && holder.ivCheck != null) {
+            holder.ivCheck.setVisibility(View.VISIBLE);
+            holder.ivCheck.setImageResource(iconResId);
+        }
+
+        itemView.setOnClickListener(v -> {
+            if (onClickListener != null) onClickListener.onClick(v);
+            adapter.bindViewHolder(holder, item);
+            if (iconResId != 0 && holder.ivCheck != null) {
+                holder.ivCheck.setVisibility(View.VISIBLE);
+                holder.ivCheck.setImageResource(iconResId);
+            }
+        });
+
+        return itemView;
     }
 }
