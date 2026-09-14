@@ -113,6 +113,25 @@ public class MultiSelectFilterAdapter<T> extends RecyclerView.Adapter<MultiSelec
         SelectableItem<T> item = displayList.get(position);
         String name = item.getName();
 
+        // adjust padding based on user input
+        float density = holder.itemView.getContext().getResources().getDisplayMetrics().density;
+        int horizontalPaddingPx = (int) (config.paddingHorizontal * density); // 16 dp left and right
+        int verticalPaddingPx = (int) (config.paddingVertical * density);   // 12 dp top and bottom
+        holder.itemView.setPadding(
+                horizontalPaddingPx,
+                verticalPaddingPx,
+                horizontalPaddingPx,
+                verticalPaddingPx);
+
+        // adjust typeface and text size based on user input
+        if (config.typeface != null) {
+            holder.tvName.setTypeface(config.typeface);
+        }
+        if (config.textSizeSp != null) {
+            // TypedValue.COMPLEX_UNIT_SP ensures correct scaling with system accessibility settings
+            holder.tvName.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, config.textSizeSp);
+        }
+
         // Highlight matching query string
         if (!currentQuery.isEmpty() && config.highlightColour != null) {
             String lowerName = name.toLowerCase(Locale.getDefault());

@@ -22,7 +22,7 @@ public class ConfigurableDividerItemDecoration extends RecyclerView.ItemDecorati
         paint.setStyle(Paint.Style.FILL);
     }
 
-    private int dpToPx(Context context, int dp) {
+    private int dpToPx(Context context, float dp) {
         return Math.round(TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
                 dp,
@@ -57,8 +57,8 @@ public class ConfigurableDividerItemDecoration extends RecyclerView.ItemDecorati
 
         // Convert DP heights and paddings to pixels
         int heightPx = dpToPx(context, config.dividerHeight);
-        int paddingLeftPx = (config.dividerPaddingLeft != null) ? dpToPx(context, config.dividerPaddingLeft) : 0;
-        int paddingRightPx = (config.dividerPaddingRight != null) ? dpToPx(context, config.dividerPaddingRight) : 0;
+        int paddingLeftPx = (config.paddingHorizontal != null) ? dpToPx(context, config.paddingHorizontal) : 0;
+        int paddingRightPx = (config.paddingVertical != null) ? dpToPx(context, config.paddingVertical) : 0;
 
         int left = parent.getPaddingLeft() + paddingLeftPx;
         int right = parent.getWidth() - parent.getPaddingRight() - paddingRightPx;

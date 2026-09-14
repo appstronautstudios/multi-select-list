@@ -1,7 +1,7 @@
 package com.appstronautstudios.multiselectlistdemo;
 
-import android.content.DialogInterface;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -20,7 +20,7 @@ import java.util.Set;
 public class MainActivity extends AppCompatActivity {
 
     private TextView selectedItemsTV;
-    private ArrayList<Food> selectedFoods = new ArrayList<>();
+    private final ArrayList<Food> selectedFoods = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,47 +29,95 @@ public class MainActivity extends AppCompatActivity {
 
         selectedItemsTV = findViewById(R.id.selected_items);
 
-        Button editButton = findViewById(R.id.selected_items_btn);
-        Button editCustomIconButton = findViewById(R.id.selected_items_custom_icon_btn);
-        Button editCustomHighlightButton = findViewById(R.id.selected_items_custom_highlight_btn);
+        Button defaultButton = findViewById(R.id.selected_items_btn);
+        Button customIconButton = findViewById(R.id.selected_items_custom_icon_btn);
+        Button customHighlightButton = findViewById(R.id.selected_items_custom_highlight_btn);
         Button noSearchButton = findViewById(R.id.no_search_btn);
         Button sortToTopButton = findViewById(R.id.sort_to_top_btn);
         Button customDividerButton = findViewById(R.id.divider_btn);
+        Button customPaddingButton = findViewById(R.id.custom_padding);
+        Button everythingButton = findViewById(R.id.everything_btn);
 
-        editButton.setOnClickListener(new View.OnClickListener() {
+        defaultButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showSelectionPrompt(false, false, false, true, false, false);
+                MultiSelectFilterView<Food> view = createSelectionView();
+                showDialog(view);
             }
         });
-        editCustomIconButton.setOnClickListener(new View.OnClickListener() {
+
+        customIconButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showSelectionPrompt(true, true, false, true, false, false);
+                MultiSelectFilterView<Food> view = createSelectionView();
+                view.setCheckOnIcon(R.drawable.check_box_24px);
+                view.setCheckOffIcon(R.drawable.check_box_outline_blank_24px);
+                showDialog(view);
             }
         });
-        editCustomHighlightButton.setOnClickListener(new View.OnClickListener() {
+
+        customHighlightButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showSelectionPrompt(false, false, true, true, false, false);
+                MultiSelectFilterView<Food> view = createSelectionView();
+                view.setHighlightColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_orange_dark));
+                showDialog(view);
             }
         });
+
         noSearchButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showSelectionPrompt(false, false, false, false, false, false);
+                MultiSelectFilterView<Food> view = createSelectionView();
+                view.setSearchVisible(false);
+                showDialog(view);
             }
         });
+
         sortToTopButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showSelectionPrompt(false, false, false, true, true, false);
+                MultiSelectFilterView<Food> view = createSelectionView();
+                view.setSortSelectedToTop(true);
+                showDialog(view);
             }
         });
+
         customDividerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showSelectionPrompt(false, false, false, true, false, true);
+                MultiSelectFilterView<Food> view = createSelectionView();
+                view.setDividerColour(Color.BLACK);
+                view.setDividerHeightDp(2);
+                showDialog(view);
+            }
+        });
+
+        customPaddingButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                MultiSelectFilterView<Food> view = createSelectionView();
+                view.setPaddingHorizontal(8);
+                view.setPaddingVertical(8);
+                showDialog(view);
+            }
+        });
+
+        everythingButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                MultiSelectFilterView<Food> view = createSelectionView();
+                view.setCheckOnIcon(R.drawable.check_box_24px);
+                view.setCheckOffIcon(R.drawable.check_box_outline_blank_24px);
+                view.setHighlightColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_orange_dark));
+                view.setSortSelectedToTop(true);
+                view.setDividerColour(Color.BLACK);
+                view.setDividerHeightDp(2);
+                view.setPaddingHorizontal(8);
+                view.setPaddingVertical(8);
+                view.setTextSizeSp(18);
+                view.setTypeface(Typeface.SERIF);
+                showDialog(view);
             }
         });
     }
@@ -91,56 +139,34 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-    private void showSelectionPrompt(boolean customOnIcon, boolean customOffIcon, boolean customHighlight, boolean searchOn, boolean sortToTop, boolean customDivider) {
+    private MultiSelectFilterView<Food> createSelectionView() {
         ArrayList<Food> allFoods = getFoodsFake();
-
         ArrayList<SelectableItem<Food>> items = new ArrayList<>();
+
         for (Food food : allFoods) {
             items.add(new SelectableItem<>(food, food.name, isFoodSelected(food)));
         }
 
         MultiSelectFilterView<Food> view = new MultiSelectFilterView<>(MainActivity.this);
-        if (customOnIcon) {
-            view.setCheckOnIcon(R.drawable.check_box_24px);
-        }
-        if (customOffIcon) {
-            view.setCheckOffIcon(R.drawable.check_box_outline_blank_24px);
-        }
-        if (customHighlight) {
-            view.setHighlightColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_orange_dark));
-        }
-        view.setSearchVisible(searchOn);
-        view.setSortSelectedToTop(sortToTop);
-        if (customDivider) {
-            view.setDividerColour(Color.BLACK);
-            view.setDividerHeightDp(2);
-            view.setDividerPaddingLeftDp(16);
-            view.setDividerPaddingRightDp(16);
-        }
-
-        // Pass null for listener so clicks only toggle internal UI state without mutating activity data immediately
         view.setItems(items, null);
+        return view;
+    }
 
+    private void showDialog(MultiSelectFilterView<Food> view) {
         new AlertDialog.Builder(MainActivity.this)
                 .setTitle("Select all that apply")
                 .setView(view)
-                .setPositiveButton("Done", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        // Update main selected foods ONLY when user confirms
-                        selectedFoods = new ArrayList<>();
-                        Set<SelectableItem<Food>> selected = view.getSelectedItems();
-                        if (selected != null) {
-                            for (SelectableItem<Food> item : selected) {
-                                selectedFoods.add(item.getData());
-                            }
+                .setPositiveButton("Done", (dialog, which) -> {
+                    selectedFoods.clear();
+                    Set<SelectableItem<Food>> selected = view.getSelectedItems();
+                    if (selected != null) {
+                        for (SelectableItem<Food> item : selected) {
+                            selectedFoods.add(item.getData());
                         }
-                        configureSelectedFoods();
-                        dialog.dismiss();
                     }
+                    configureSelectedFoods();
                 })
                 .setNegativeButton("Cancel", null)
-                .create()
                 .show();
     }
 

@@ -1,6 +1,7 @@
 package com.appstronautstudios.multiselectlist.view;
 
 import android.content.Context;
+import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -93,23 +94,33 @@ public class MultiSelectFilterView<T> extends LinearLayout {
     }
 
     public void setDividerColour(int colour) {
-        config.setDividerColour(colour);
+        config.dividerColour = colour;
         recyclerView.invalidateItemDecorations(); // Refreshes item offsets & redraws
     }
 
-    public void setDividerHeightDp(int height) {
-        config.setDividerHeight(height);
+    public void setDividerHeightDp(float height) {
+        config.dividerHeight = height;
         recyclerView.invalidateItemDecorations(); // Refreshes item offsets & redraws
     }
 
-    public void setDividerPaddingLeftDp(int left) {
-        config.setDividerPaddingLeft(left);
+    public void setPaddingHorizontal(float paddingHorizontal) {
+        config.paddingHorizontal = paddingHorizontal;
         recyclerView.invalidateItemDecorations();
     }
 
-    public void setDividerPaddingRightDp(int right) {
-        config.setDividerPaddingRight(right);
+    public void setPaddingVertical(float paddingVertical) {
+        config.paddingVertical = paddingVertical;
         recyclerView.invalidateItemDecorations();
+    }
+
+    public void setTextSizeSp(float textSizeSp) {
+        config.textSizeSp = textSizeSp;
+        if (adapter != null) adapter.notifyDataSetChanged();
+    }
+
+    public void setTypeface(Typeface typeface) {
+        config.typeface = typeface;
+        if (adapter != null) adapter.notifyDataSetChanged();
     }
 
     public void setSearchVisible(boolean visible) {
