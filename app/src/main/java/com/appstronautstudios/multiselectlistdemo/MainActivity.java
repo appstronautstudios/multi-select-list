@@ -57,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
                 MultiSelectFilterView<Food> view = createSelectionView();
                 view.setCheckOnIcon(R.drawable.check_box_24px);
                 view.setCheckOffIcon(R.drawable.check_box_outline_blank_24px);
+                view.setIconTintRes(R.color.colorAccent);
                 showDialog(view);
             }
         });
@@ -93,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 MultiSelectFilterView<Food> view = createSelectionView();
                 view.setDividerColour(Color.BLACK);
-                view.setDividerHeightDp(2);
+                view.setDividerHeight(2);
                 showDialog(view);
             }
         });
@@ -124,13 +125,14 @@ public class MainActivity extends AppCompatActivity {
                 MultiSelectFilterView<Food> view = createSelectionView();
                 view.setCheckOnIcon(R.drawable.check_box_24px);
                 view.setCheckOffIcon(R.drawable.check_box_outline_blank_24px);
+                view.setIconTintRes(R.color.colorAccent);
                 view.setHighlightColor(ContextCompat.getColor(MainActivity.this, android.R.color.holo_orange_dark));
                 view.setSortSelectedToTop(true);
                 view.setDividerColour(Color.BLACK);
-                view.setDividerHeightDp(2);
+                view.setDividerHeight(2);
                 view.setPaddingHorizontal(8);
                 view.setPaddingVertical(8);
-                view.setTextSizeSp(18);
+                view.setTextSize(18);
                 view.setTypeface(Typeface.SERIF);
 
                 // create custom cell that matches list config
@@ -142,7 +144,6 @@ public class MainActivity extends AppCompatActivity {
                         Toast.makeText(MainActivity.this, "Add Food clicked", Toast.LENGTH_LONG).show();
                     }
                 });
-
                 View customCell2 = view.createStyledCell(new SelectableItem<>(null, "Edit Foods"), R.drawable.edit_24px, new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {

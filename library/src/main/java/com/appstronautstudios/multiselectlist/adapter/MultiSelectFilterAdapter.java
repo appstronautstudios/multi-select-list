@@ -1,5 +1,6 @@
 package com.appstronautstudios.multiselectlist.adapter;
 
+import android.content.Context;
 import android.graphics.Typeface;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -10,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Filter;
 import android.widget.Filterable;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -90,13 +92,13 @@ public class MultiSelectFilterAdapter<T> extends RecyclerView.Adapter<MultiSelec
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        public final TextView tvName;
-        public final ImageView ivCheck;
+        public TextView tvName;
+        public FrameLayout iconContainer;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             tvName = itemView.findViewById(R.id.lib_tv_name);
-            ivCheck = itemView.findViewById(R.id.lib_iv_check);
+            iconContainer = itemView.findViewById(R.id.lib_fl_icon_container);
         }
     }
 
@@ -157,20 +159,56 @@ public class MultiSelectFilterAdapter<T> extends RecyclerView.Adapter<MultiSelec
         }
 
         // Toggle Checkmark Visibility and Icon
-        if (holder.ivCheck != null) {
-            if (item.isSelected()) {
-                holder.ivCheck.setVisibility(View.VISIBLE);
-                if (config.checkOnResId != null) {
-                    holder.ivCheck.setImageResource(config.checkOnResId);
-                }
-            } else {
-                // If has an off icon show that. Otherwise, hide icon entirely
-                if (config.checkOffResId != null) {
-                    holder.ivCheck.setVisibility(View.VISIBLE);
-                    holder.ivCheck.setImageResource(config.checkOffResId);
+        if (holder.iconContainer != null) {
+            holder.iconContainer.removeAllViews();
+
+            boolean isSelected = item.isSelected();
+            int resId = isSelected ? config.checkOnResId : config.checkOffResId;
+
+            if (resId != 0) {
+                Context context = holder.itemView.getContext();
+                String resourceType = context.getResources().getResourceTypeName(resId);
+
+                if ("layout".equalsIgnoreCase(resourceType)) {
+                    // 1. Layout Resource: Inflate custom view directly (tint ignored)
+                    LayoutInflater.from(context).inflate(resId, holder.iconContainer, true);
+                    holder.iconContainer.setVisibility(View.VISIBLE);
                 } else {
-                    holder.ivCheck.setVisibility(View.INVISIBLE);
+                    // 2. Drawable Resource: Inflate container layout and apply optional tint
+                    View iconLayout = LayoutInflater.from(context)
+                            .inflate(R.layout.icon_container, holder.iconContainer, false);
+                    ImageView ivIcon = iconLayout.findViewById(R.id.lib_iv_icon);
+                    ivIcon.setImageResource(resId);
+
+                    if (config.iconTint != null) {
+                        androidx.core.widget.ImageViewCompat.setImageTintList(
+                                ivIcon,
+                                android.content.res.ColorStateList.valueOf(config.iconTint)
+                        );
+                    }
+
+                    holder.iconContainer.addView(iconLayout);
+                    holder.iconContainer.setVisibility(View.VISIBLE);
                 }
+            } else if (isSelected) {
+                // 3. Fallback default checkmark icon (applies tint if set)
+                Context context = holder.itemView.getContext();
+                View iconLayout = LayoutInflater.from(context)
+                        .inflate(R.layout.icon_container, holder.iconContainer, false);
+                ImageView ivIcon = iconLayout.findViewById(R.id.lib_iv_icon);
+                ivIcon.setImageResource(R.drawable.check_24px);
+
+                if (config.iconTint != null) {
+                    androidx.core.widget.ImageViewCompat.setImageTintList(
+                            ivIcon,
+                            android.content.res.ColorStateList.valueOf(config.iconTint)
+                    );
+                }
+
+                holder.iconContainer.addView(iconLayout);
+                holder.iconContainer.setVisibility(View.VISIBLE);
+            } else {
+                holder.iconContainer.setVisibility(View.INVISIBLE);
             }
         }
 

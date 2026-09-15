@@ -2,14 +2,15 @@ package com.appstronautstudios.multiselectlist.model;
 
 import android.graphics.Typeface;
 
+import androidx.annotation.AnyRes;
 import androidx.annotation.ColorInt;
-import androidx.annotation.DrawableRes;
 
 public class MultiSelectFilterConfig {
-    @DrawableRes
-    public Integer checkOnResId = null;
-    @DrawableRes
-    public Integer checkOffResId = null;
+    @AnyRes
+    public int checkOnResId = 0;
+    @AnyRes
+    public int checkOffResId = 0;
+    @ColorInt public Integer iconTint = null; // Tint color for drawable icons
     @ColorInt
     public Integer highlightColour = null;
     public Float dividerHeight = 0f;

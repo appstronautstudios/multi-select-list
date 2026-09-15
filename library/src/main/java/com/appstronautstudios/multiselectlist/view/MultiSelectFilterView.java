@@ -2,15 +2,26 @@ package com.appstronautstudios.multiselectlist.view;
 
 import android.content.Context;
 import android.graphics.Typeface;
+import android.os.Build;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 
-import androidx.annotation.DrawableRes;
+import androidx.annotation.AnyRes;
+import androidx.annotation.ColorInt;
+import androidx.annotation.ColorRes;
+import androidx.annotation.DimenRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SearchView;
+import androidx.core.content.ContextCompat;
+import androidx.core.widget.ImageViewCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -103,7 +114,6 @@ public class MultiSelectFilterView<T> extends LinearLayout {
     }
 
     public void setItems(List<SelectableItem<T>> items, MultiSelectFilterAdapter.OnSelectionChangedListener<T> listener) {
-        // Pass sortSelectedToTop directly to constructor so initial sorting honors the setting
         adapter = new MultiSelectFilterAdapter<>(items, listener, config);
         recyclerView.setAdapter(adapter);
     }
@@ -113,7 +123,6 @@ public class MultiSelectFilterView<T> extends LinearLayout {
     }
 
     public void setHeaderView(View headerView) {
-        // Index 1 places the header below searchView (0) and above recyclerView
         this.addView(headerView, 1, new LinearLayout.LayoutParams(-1, -2));
     }
 
@@ -121,44 +130,99 @@ public class MultiSelectFilterView<T> extends LinearLayout {
         this.addView(footerView, new LinearLayout.LayoutParams(-1, -2));
     }
 
-    public void setCheckOnIcon(@DrawableRes int resId) {
+    public void setCheckOnIcon(@AnyRes int resId) {
         config.checkOnResId = resId;
         if (adapter != null) adapter.notifyDataSetChanged();
     }
 
-    public void setCheckOffIcon(@DrawableRes int resId) {
+    public void setCheckOffIcon(@AnyRes int resId) {
         config.checkOffResId = resId;
         if (adapter != null) adapter.notifyDataSetChanged();
     }
 
-    public void setHighlightColor(int color) {
-        config.highlightColour = color;
+    public void setIconTint(@ColorInt int color) {
+        config.iconTint = resolveColor(color);
         if (adapter != null) adapter.notifyDataSetChanged();
     }
 
-    public void setDividerColour(int colour) {
-        config.dividerColour = colour;
-        recyclerView.invalidateItemDecorations(); // Refreshes item offsets & redraws
+    public void setIconTintRes(@ColorRes int colorResId) {
+        if (colorResId != 0) {
+            config.iconTint = ContextCompat.getColor(getContext(), colorResId);
+            if (adapter != null) adapter.notifyDataSetChanged();
+        } else {
+            config.iconTint = null;
+        }
     }
 
-    public void setDividerHeightDp(float height) {
-        config.dividerHeight = height;
-        recyclerView.invalidateItemDecorations(); // Refreshes item offsets & redraws
-    }
-
-    public void setPaddingHorizontal(float paddingHorizontal) {
-        config.paddingHorizontal = paddingHorizontal;
-        recyclerView.invalidateItemDecorations();
-    }
-
-    public void setPaddingVertical(float paddingVertical) {
-        config.paddingVertical = paddingVertical;
-        recyclerView.invalidateItemDecorations();
-    }
-
-    public void setTextSizeSp(float textSizeSp) {
-        config.textSizeSp = textSizeSp;
+    public void setHighlightColor(@ColorInt int color) {
+        config.highlightColour = resolveColor(color);
         if (adapter != null) adapter.notifyDataSetChanged();
+    }
+
+    public void setHighlightColorRes(@ColorRes int colorResId) {
+        if (colorResId != 0) {
+            config.highlightColour = ContextCompat.getColor(getContext(), colorResId);
+            if (adapter != null) adapter.notifyDataSetChanged();
+        } else {
+            config.highlightColour = null;
+        }
+    }
+
+    public void setDividerColour(@ColorInt int color) {
+        config.dividerColour = resolveColor(color);
+        recyclerView.invalidateItemDecorations();
+    }
+
+    public void setDividerColourRes(@ColorRes int colorResId) {
+        if (colorResId != 0) {
+            config.dividerColour = ContextCompat.getColor(getContext(), colorResId);
+            recyclerView.invalidateItemDecorations();
+        } else {
+            config.dividerColour = null;
+        }
+    }
+
+    public void setDividerHeight(float dp) {
+        this.config.dividerHeight = dp;
+        this.recyclerView.invalidateItemDecorations();
+    }
+
+    public void setDividerHeightRes(@DimenRes int resId) {
+        setDividerHeight(resolveDimenToDp(resId));
+    }
+
+    public void setPaddingHorizontal(float dp) {
+        this.config.paddingHorizontal = dp;
+        this.recyclerView.invalidateItemDecorations();
+    }
+
+    public void setPaddingHorizontalRes(@DimenRes int resId) {
+        setPaddingHorizontal(resolveDimenToDp(resId));
+    }
+
+    public void setPaddingVertical(float dp) {
+        this.config.paddingVertical = dp;
+        this.recyclerView.invalidateItemDecorations();
+    }
+
+    public void setPaddingVerticalRes(@DimenRes int resId) {
+        setPaddingVertical(resolveDimenToDp(resId));
+    }
+
+    public void setTextSize(float sp) {
+        this.config.textSizeSp = sp;
+        if (this.adapter != null) {
+            this.adapter.notifyDataSetChanged();
+        }
+    }
+
+    public void setTextSizeRes(@DimenRes int resId) {
+        float px = getContext().getResources().getDimension(resId);
+        DisplayMetrics metrics = getContext().getResources().getDisplayMetrics();
+        float sp = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+                ? TypedValue.deriveDimension(TypedValue.COMPLEX_UNIT_SP, px, metrics)
+                : px / metrics.scaledDensity;
+        setTextSize(sp);
     }
 
     public void setTypeface(Typeface typeface) {
@@ -183,7 +247,18 @@ public class MultiSelectFilterView<T> extends LinearLayout {
         if (adapter != null) adapter.clearSelections();
     }
 
-    public View createStyledCell(SelectableItem<T> item,@DrawableRes int iconResId, OnClickListener onClickListener) {
+    // 1. Unified Resource ID Overload (Handles both @DrawableRes and @LayoutRes)
+    public View createStyledCell(SelectableItem<T> item, @AnyRes int iconResId, OnClickListener onClickListener) {
+        return createStyledCellInternal(item, iconResId, null, onClickListener);
+    }
+
+    // 2. Pre-Inflated Custom View Overload
+    public View createStyledCell(SelectableItem<T> item, @Nullable View customIconView, OnClickListener onClickListener) {
+        return createStyledCellInternal(item, 0, customIconView, onClickListener);
+    }
+
+    // Master Private Builder
+    private View createStyledCellInternal(SelectableItem<T> item, @AnyRes int resId, @Nullable View customView, OnClickListener onClickListener) {
         View itemView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_selectable, this, false);
         MultiSelectFilterAdapter.ViewHolder holder = new MultiSelectFilterAdapter.ViewHolder(itemView);
 
@@ -191,23 +266,93 @@ public class MultiSelectFilterView<T> extends LinearLayout {
             adapter = new MultiSelectFilterAdapter<>(Collections.emptyList(), null, config);
         }
 
+        // 1. Bind text styling, padding, and typeface
         adapter.bindViewHolder(holder, item);
 
-        // Override icon if custom iconResId is provided
-        if (iconResId != 0 && holder.ivCheck != null) {
-            holder.ivCheck.setVisibility(View.VISIBLE);
-            holder.ivCheck.setImageResource(iconResId);
-        }
+        // 2. Override container slot with custom header icon/view
+        setContainerContent(getContext(), holder.iconContainer, resId, customView);
 
         itemView.setOnClickListener(v -> {
             if (onClickListener != null) onClickListener.onClick(v);
+
+            // Re-bind text and re-apply custom container content to retain header state
             adapter.bindViewHolder(holder, item);
-            if (iconResId != 0 && holder.ivCheck != null) {
-                holder.ivCheck.setVisibility(View.VISIBLE);
-                holder.ivCheck.setImageResource(iconResId);
-            }
+            setContainerContent(getContext(), holder.iconContainer, resId, customView);
         });
 
         return itemView;
+    }
+
+    private void setContainerContent(Context context, FrameLayout container, @AnyRes int resId, @Nullable View customView) {
+        if (container == null) return;
+        container.removeAllViews();
+
+        if (customView != null) {
+            // Option A: Pre-inflated View (Ensure it has no existing parent)
+            if (customView.getParent() != null) {
+                ((ViewGroup) customView.getParent()).removeView(customView);
+            }
+            container.addView(customView, new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+            ));
+            container.setVisibility(View.VISIBLE);
+        } else if (resId != 0) {
+            String resourceType = context.getResources().getResourceTypeName(resId);
+
+            if ("layout".equalsIgnoreCase(resourceType)) {
+                // Option B: Custom Layout XML ID (R.layout.my_custom_view)
+                LayoutInflater.from(context).inflate(resId, container, true);
+                container.setVisibility(View.VISIBLE);
+            } else {
+                // Option C: Drawable/Vector Resource ID (R.drawable.ic_header)
+                View iconLayout = LayoutInflater.from(context)
+                        .inflate(R.layout.icon_container, container, false);
+                ImageView ivIcon = iconLayout.findViewById(R.id.lib_iv_icon);
+                ivIcon.setImageResource(resId);
+
+                if (config.iconTint != null) {
+                    ImageViewCompat.setImageTintList(
+                            ivIcon,
+                            android.content.res.ColorStateList.valueOf(config.iconTint)
+                    );
+                }
+
+                container.addView(iconLayout);
+                container.setVisibility(View.VISIBLE);
+            }
+        } else {
+            container.setVisibility(View.GONE);
+        }
+    }
+
+    @Nullable
+    private Integer resolveColor(@ColorInt int colorOrResId) {
+        if (colorOrResId == 0) {
+            return null;
+        }
+        try {
+            String resourceType = getContext().getResources().getResourceTypeName(colorOrResId);
+            if ("color".equalsIgnoreCase(resourceType)) {
+                return ContextCompat.getColor(getContext(), colorOrResId);
+            }
+        } catch (android.content.res.Resources.NotFoundException ignored) {
+            // Fall through to treat as raw @ColorInt
+        }
+        return colorOrResId;
+    }
+
+    private float resolveDimenToDp(@DimenRes int resId) {
+        if (resId == 0) return 0f;
+        try {
+            String type = getContext().getResources().getResourceTypeName(resId);
+            if ("dimen".equalsIgnoreCase(type)) {
+                float px = getContext().getResources().getDimension(resId);
+                return px / getContext().getResources().getDisplayMetrics().density;
+            }
+        } catch (android.content.res.Resources.NotFoundException ignored) {
+            // Not a valid resource ID
+        }
+        return 0f;
     }
 }
