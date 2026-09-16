@@ -4,13 +4,13 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.util.TypedValue;
 import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.appstronautstudios.multiselectlist.model.MultiSelectFilterConfig;
+import com.appstronautstudios.multiselectlist.utils.MultiSelectUtils;
 
 public class ConfigurableDividerItemDecoration extends RecyclerView.ItemDecoration {
 
@@ -22,46 +22,34 @@ public class ConfigurableDividerItemDecoration extends RecyclerView.ItemDecorati
         paint.setStyle(Paint.Style.FILL);
     }
 
-    private int dpToPx(Context context, float dp) {
-        return Math.round(TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP,
-                dp,
-                context.getResources().getDisplayMetrics()
-        ));
-    }
-
     @Override
     public void getItemOffsets(@NonNull Rect outRect, @NonNull View view,
                                @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
         int position = parent.getChildAdapterPosition(view);
         int itemCount = state.getItemCount();
+        int heightPx = MultiSelectUtils.getDividerHeightPx(parent.getContext(), config);
 
-        if (position == RecyclerView.NO_POSITION || position == itemCount - 1
-                || config.dividerHeight == null || config.dividerHeight <= 0) {
+        if (position == RecyclerView.NO_POSITION || position == itemCount - 1 || heightPx <= 0 || config.dividerColour == null) {
             outRect.set(0, 0, 0, 0);
             return;
         }
 
-        // Convert DP height to pixels
-        outRect.bottom = dpToPx(parent.getContext(), config.dividerHeight);
+        outRect.bottom = heightPx;
     }
 
     @Override
     public void onDraw(@NonNull Canvas c, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
-        if (config.dividerHeight == null || config.dividerHeight <= 0 || config.dividerColour == null) {
+        int heightPx = MultiSelectUtils.getDividerHeightPx(parent.getContext(), config);
+        if (heightPx <= 0 || config.dividerColour == null) {
             return;
         }
 
         Context context = parent.getContext();
-        paint.setColor(config.dividerColour);
+        paint.setColor(MultiSelectUtils.getDividerColor(config));
 
-        // Convert DP heights and paddings to pixels
-        int heightPx = dpToPx(context, config.dividerHeight);
-        int paddingLeftPx = (config.paddingHorizontal != null) ? dpToPx(context, config.paddingHorizontal) : 0;
-        int paddingRightPx = (config.paddingVertical != null) ? dpToPx(context, config.paddingVertical) : 0;
-
-        int left = parent.getPaddingLeft() + paddingLeftPx;
-        int right = parent.getWidth() - parent.getPaddingRight() - paddingRightPx;
+        int marginHorizontalPx = MultiSelectUtils.getHorizontalPaddingPx(context, config);
+        int left = marginHorizontalPx;
+        int right = parent.getWidth() - marginHorizontalPx;
         int childCount = parent.getChildCount();
 
         for (int i = 0; i < childCount; i++) {

@@ -144,6 +144,7 @@ public class MainActivity extends AppCompatActivity {
                         Toast.makeText(MainActivity.this, "header 1 clicked", Toast.LENGTH_SHORT).show();
                     }
                 });
+                View divider = view.createStyledDivider();
                 View customCell2 = view.createStyledCell(new SelectableItem<>(null, "Styled Cell with Drawable Button"), R.drawable.edit_24px, new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -151,6 +152,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
                 headerContainer.addView(customCell);
+                headerContainer.addView(divider);
                 headerContainer.addView(customCell2);
                 view.setHeaderView(headerContainer);
                 view.setFooterView(createStyleFooter());

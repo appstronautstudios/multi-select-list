@@ -2,15 +2,9 @@ package com.appstronautstudios.multiselectlist.view;
 
 import android.content.Context;
 import android.graphics.Typeface;
-import android.os.Build;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
-import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import androidx.annotation.AnyRes;
@@ -21,7 +15,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SearchView;
 import androidx.core.content.ContextCompat;
-import androidx.core.widget.ImageViewCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -29,6 +22,7 @@ import com.appstronautstudios.multiselectlist.R;
 import com.appstronautstudios.multiselectlist.adapter.MultiSelectFilterAdapter;
 import com.appstronautstudios.multiselectlist.model.MultiSelectFilterConfig;
 import com.appstronautstudios.multiselectlist.model.SelectableItem;
+import com.appstronautstudios.multiselectlist.utils.MultiSelectUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -56,38 +50,9 @@ public class MultiSelectFilterView<T> extends LinearLayout {
         setOrientation(VERTICAL);
 
         searchView = new SearchView(context);
-        searchView.setIconifiedByDefault(false);
-        searchView.setQueryHint(getContext().getString(androidx.appcompat.R.string.abc_search_hint));
+        MultiSelectUtils.styleSearchView(context, searchView, config);
 
-        // 1. Remove legacy underline & background artifacts inside SearchView
-        View searchPlate = searchView.findViewById(androidx.appcompat.R.id.search_plate);
-        if (searchPlate != null) {
-            searchPlate.setBackground(null);
-        }
-
-        // 2. Remove default inset margins so content aligns flush to edges
-        View searchEditFrame = searchView.findViewById(androidx.appcompat.R.id.search_edit_frame);
-        if (searchEditFrame != null && searchEditFrame.getLayoutParams() instanceof MarginLayoutParams) {
-            MarginLayoutParams params = (MarginLayoutParams) searchEditFrame.getLayoutParams();
-            params.leftMargin = 0;
-            params.rightMargin = 0;
-            searchEditFrame.setLayoutParams(params);
-        }
-
-        // 3. Match horizontal padding to list items (16dp default)
         float density = context.getResources().getDisplayMetrics().density;
-        int padH = (int) (config.paddingHorizontal * density); // Default 16dp
-        int padV = (int) (6 * density);
-        searchView.setPadding(padH, padV, padH, padV);
-
-        // 4. Modern rounded background for the search field
-        android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
-        bg.setShape(android.graphics.drawable.GradientDrawable.RECTANGLE);
-        bg.setCornerRadius(8 * density);
-        bg.setColor(android.graphics.Color.parseColor("#F1F3F4")); // Subtle light gray background
-        searchView.setBackground(bg);
-
-        // 5. Wrap searchView inside a container with margins to separate it from list
         LinearLayout.LayoutParams searchParams = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
         searchParams.setMargins((int) (8 * density), (int) (8 * density), (int) (8 * density), (int) (8 * density));
 
@@ -141,7 +106,7 @@ public class MultiSelectFilterView<T> extends LinearLayout {
     }
 
     public void setIconTint(@ColorInt int color) {
-        config.iconTint = resolveColor(color);
+        config.iconTint = MultiSelectUtils.resolveColor(getContext(), color);
         if (adapter != null) adapter.notifyDataSetChanged();
     }
 
@@ -155,7 +120,7 @@ public class MultiSelectFilterView<T> extends LinearLayout {
     }
 
     public void setHighlightColor(@ColorInt int color) {
-        config.highlightColour = resolveColor(color);
+        config.highlightColour = MultiSelectUtils.resolveColor(getContext(), color);
         if (adapter != null) adapter.notifyDataSetChanged();
     }
 
@@ -169,7 +134,7 @@ public class MultiSelectFilterView<T> extends LinearLayout {
     }
 
     public void setDividerColour(@ColorInt int color) {
-        config.dividerColour = resolveColor(color);
+        config.dividerColour = MultiSelectUtils.resolveColor(getContext(), color);
         recyclerView.invalidateItemDecorations();
     }
 
@@ -188,7 +153,7 @@ public class MultiSelectFilterView<T> extends LinearLayout {
     }
 
     public void setDividerHeightRes(@DimenRes int resId) {
-        setDividerHeight(resolveDimenToDp(resId));
+        setDividerHeight(MultiSelectUtils.resolveDimenToDp(getContext(), resId));
     }
 
     public void setPaddingHorizontal(float dp) {
@@ -197,7 +162,7 @@ public class MultiSelectFilterView<T> extends LinearLayout {
     }
 
     public void setPaddingHorizontalRes(@DimenRes int resId) {
-        setPaddingHorizontal(resolveDimenToDp(resId));
+        setPaddingHorizontal(MultiSelectUtils.resolveDimenToDp(getContext(), resId));
     }
 
     public void setPaddingVertical(float dp) {
@@ -206,7 +171,7 @@ public class MultiSelectFilterView<T> extends LinearLayout {
     }
 
     public void setPaddingVerticalRes(@DimenRes int resId) {
-        setPaddingVertical(resolveDimenToDp(resId));
+        setPaddingVertical(MultiSelectUtils.resolveDimenToDp(getContext(), resId));
     }
 
     public void setTextSize(float sp) {
@@ -218,11 +183,7 @@ public class MultiSelectFilterView<T> extends LinearLayout {
 
     public void setTextSizeRes(@DimenRes int resId) {
         float px = getContext().getResources().getDimension(resId);
-        DisplayMetrics metrics = getContext().getResources().getDisplayMetrics();
-        float sp = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-                ? TypedValue.deriveDimension(TypedValue.COMPLEX_UNIT_SP, px, metrics)
-                : px / metrics.scaledDensity;
-        setTextSize(sp);
+        setTextSize(MultiSelectUtils.pxToSp(getContext(), px));
     }
 
     public void setTypeface(Typeface typeface) {
@@ -247,17 +208,38 @@ public class MultiSelectFilterView<T> extends LinearLayout {
         if (adapter != null) adapter.clearSelections();
     }
 
-    // 1. Unified Resource ID Overload (Handles both @DrawableRes and @LayoutRes)
+    public View createStyledDivider() {
+        Context context = getContext();
+
+        int heightPx = MultiSelectUtils.getDividerHeightPx(context, config);
+        if (heightPx <= 0) {
+            heightPx = Math.max(1, MultiSelectUtils.dpToPx(context, MultiSelectUtils.DEFAULT_DIVIDER_HEIGHT_DP));
+        }
+
+        int color = MultiSelectUtils.getDividerColor(config);
+        int marginPx = MultiSelectUtils.getHorizontalPaddingPx(context, config);
+
+        View dividerView = new View(context);
+        dividerView.setBackgroundColor(color);
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                heightPx
+        );
+        params.setMargins(marginPx, 0, marginPx, 0);
+        dividerView.setLayoutParams(params);
+
+        return dividerView;
+    }
+
     public View createStyledCell(SelectableItem<T> item, @AnyRes int iconResId, OnClickListener onClickListener) {
         return createStyledCellInternal(item, iconResId, null, onClickListener);
     }
 
-    // 2. Pre-Inflated Custom View Overload
     public View createStyledCell(SelectableItem<T> item, @Nullable View customIconView, OnClickListener onClickListener) {
         return createStyledCellInternal(item, 0, customIconView, onClickListener);
     }
 
-    // Master Private Builder
     private View createStyledCellInternal(SelectableItem<T> item, @AnyRes int resId, @Nullable View customView, OnClickListener onClickListener) {
         View itemView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_selectable, this, false);
         MultiSelectFilterAdapter.ViewHolder holder = new MultiSelectFilterAdapter.ViewHolder(itemView);
@@ -266,13 +248,10 @@ public class MultiSelectFilterView<T> extends LinearLayout {
             adapter = new MultiSelectFilterAdapter<>(Collections.emptyList(), null, config);
         }
 
-        // 1. Bind text styling, padding, and typeface (this sets the default itemView listener)
         adapter.bindViewHolder(holder, item);
 
-        // 2. Override container slot with custom header icon/view
-        setContainerContent(getContext(), holder.iconContainer, resId, customView);
+        MultiSelectUtils.populateContainerContent(getContext(), holder.iconContainer, resId, customView, config.iconTint);
 
-        // 3. Override the click listener LAST so it doesn't get overwritten by bindViewHolder
         itemView.setOnClickListener(v -> {
             if (onClickListener != null) {
                 onClickListener.onClick(v);
@@ -280,78 +259,5 @@ public class MultiSelectFilterView<T> extends LinearLayout {
         });
 
         return itemView;
-    }
-
-    private void setContainerContent(Context context, FrameLayout container, @AnyRes int resId, @Nullable View customView) {
-        if (container == null) return;
-        container.removeAllViews();
-
-        if (customView != null) {
-            // Option A: Pre-inflated View (Ensure it has no existing parent)
-            if (customView.getParent() != null) {
-                ((ViewGroup) customView.getParent()).removeView(customView);
-            }
-            container.addView(customView, new FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.MATCH_PARENT
-            ));
-            container.setVisibility(View.VISIBLE);
-        } else if (resId != 0) {
-            String resourceType = context.getResources().getResourceTypeName(resId);
-
-            if ("layout".equalsIgnoreCase(resourceType)) {
-                // Option B: Custom Layout XML ID (R.layout.my_custom_view)
-                LayoutInflater.from(context).inflate(resId, container, true);
-                container.setVisibility(View.VISIBLE);
-            } else {
-                // Option C: Drawable/Vector Resource ID (R.drawable.ic_header)
-                View iconLayout = LayoutInflater.from(context)
-                        .inflate(R.layout.icon_container, container, false);
-                ImageView ivIcon = iconLayout.findViewById(R.id.lib_iv_icon);
-                ivIcon.setImageResource(resId);
-
-                if (config.iconTint != null) {
-                    ImageViewCompat.setImageTintList(
-                            ivIcon,
-                            android.content.res.ColorStateList.valueOf(config.iconTint)
-                    );
-                }
-
-                container.addView(iconLayout);
-                container.setVisibility(View.VISIBLE);
-            }
-        } else {
-            container.setVisibility(View.GONE);
-        }
-    }
-
-    @Nullable
-    private Integer resolveColor(@ColorInt int colorOrResId) {
-        if (colorOrResId == 0) {
-            return null;
-        }
-        try {
-            String resourceType = getContext().getResources().getResourceTypeName(colorOrResId);
-            if ("color".equalsIgnoreCase(resourceType)) {
-                return ContextCompat.getColor(getContext(), colorOrResId);
-            }
-        } catch (android.content.res.Resources.NotFoundException ignored) {
-            // Fall through to treat as raw @ColorInt
-        }
-        return colorOrResId;
-    }
-
-    private float resolveDimenToDp(@DimenRes int resId) {
-        if (resId == 0) return 0f;
-        try {
-            String type = getContext().getResources().getResourceTypeName(resId);
-            if ("dimen".equalsIgnoreCase(type)) {
-                float px = getContext().getResources().getDimension(resId);
-                return px / getContext().getResources().getDisplayMetrics().density;
-            }
-        } catch (android.content.res.Resources.NotFoundException ignored) {
-            // Not a valid resource ID
-        }
-        return 0f;
     }
 }
