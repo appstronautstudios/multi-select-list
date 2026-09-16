@@ -266,18 +266,17 @@ public class MultiSelectFilterView<T> extends LinearLayout {
             adapter = new MultiSelectFilterAdapter<>(Collections.emptyList(), null, config);
         }
 
-        // 1. Bind text styling, padding, and typeface
+        // 1. Bind text styling, padding, and typeface (this sets the default itemView listener)
         adapter.bindViewHolder(holder, item);
 
         // 2. Override container slot with custom header icon/view
         setContainerContent(getContext(), holder.iconContainer, resId, customView);
 
+        // 3. Override the click listener LAST so it doesn't get overwritten by bindViewHolder
         itemView.setOnClickListener(v -> {
-            if (onClickListener != null) onClickListener.onClick(v);
-
-            // Re-bind text and re-apply custom container content to retain header state
-            adapter.bindViewHolder(holder, item);
-            setContainerContent(getContext(), holder.iconContainer, resId, customView);
+            if (onClickListener != null) {
+                onClickListener.onClick(v);
+            }
         });
 
         return itemView;

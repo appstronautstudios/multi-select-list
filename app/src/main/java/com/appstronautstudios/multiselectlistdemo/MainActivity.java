@@ -138,16 +138,16 @@ public class MainActivity extends AppCompatActivity {
                 // create custom cell that matches list config
                 LinearLayout headerContainer = new LinearLayout(MainActivity.this);
                 headerContainer.setOrientation(LinearLayout.VERTICAL);
-                View customCell = view.createStyledCell(new SelectableItem<>(null, "Add Food"), R.drawable.add_2_24px, new View.OnClickListener() {
+                View customCell = view.createStyledCell(new SelectableItem<>(null, "Styled Cell with Layout Button"), R.layout.view_option_add, new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Toast.makeText(MainActivity.this, "Add Food clicked", Toast.LENGTH_LONG).show();
+                        Toast.makeText(MainActivity.this, "header 1 clicked", Toast.LENGTH_SHORT).show();
                     }
                 });
-                View customCell2 = view.createStyledCell(new SelectableItem<>(null, "Edit Foods"), R.drawable.edit_24px, new View.OnClickListener() {
+                View customCell2 = view.createStyledCell(new SelectableItem<>(null, "Styled Cell with Drawable Button"), R.drawable.edit_24px, new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Toast.makeText(MainActivity.this, "Edit Foods clicked", Toast.LENGTH_LONG).show();
+                        Toast.makeText(MainActivity.this, "header 2 clicked", Toast.LENGTH_SHORT).show();
                     }
                 });
                 headerContainer.addView(customCell);
