@@ -1,18 +1,13 @@
 package com.appstronautstudios.multiselectlist.adapter;
 
 import android.content.Context;
-import android.graphics.Typeface;
-import android.text.Spannable;
-import android.text.SpannableString;
-import android.text.style.ForegroundColorSpan;
-import android.text.style.StyleSpan;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Filter;
 import android.widget.Filterable;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -21,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.appstronautstudios.multiselectlist.R;
 import com.appstronautstudios.multiselectlist.model.MultiSelectFilterConfig;
 import com.appstronautstudios.multiselectlist.model.SelectableItem;
+import com.appstronautstudios.multiselectlist.utils.MultiSelectUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,7 +43,7 @@ public class MultiSelectFilterAdapter<T> extends RecyclerView.Adapter<MultiSelec
         this.displayList = new ArrayList<>(items);
         this.listener = listener;
         this.config = config;
-        applySort(); // Ensures initial sorting respects sortSelectedToTop
+        applySort();
     }
 
     public void updateData(List<SelectableItem<T>> newItems) {
@@ -111,107 +107,51 @@ public class MultiSelectFilterAdapter<T> extends RecyclerView.Adapter<MultiSelec
     }
 
     public void bindViewHolder(@NonNull ViewHolder holder, SelectableItem<T> item) {
-        String name = item.getName();
+        Context context = holder.itemView.getContext();
 
-        // adjust padding based on user input
-        float density = holder.itemView.getContext().getResources().getDisplayMetrics().density;
-        int horizontalPaddingPx = (int) (config.paddingHorizontal * density); // 16 dp left and right
-        int verticalPaddingPx = (int) (config.paddingVertical * density);   // 12 dp top and bottom
-        holder.itemView.setPadding(
-                horizontalPaddingPx,
-                verticalPaddingPx,
-                horizontalPaddingPx,
-                verticalPaddingPx);
+        // 1. Adjust view padding via MultiSelectUtils
+        MultiSelectUtils.applyConfigPadding(holder.itemView, config);
 
-        // adjust typeface and text size based on user input
+        // 2. Adjust typeface and text size
         if (config.typeface != null) {
             holder.tvName.setTypeface(config.typeface);
         }
         if (config.textSizeSp != null) {
-            // TypedValue.COMPLEX_UNIT_SP ensures correct scaling with system accessibility settings
-            holder.tvName.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, config.textSizeSp);
+            holder.tvName.setTextSize(TypedValue.COMPLEX_UNIT_SP, config.textSizeSp);
         }
 
-        // Highlight matching query string
-        if (!currentQuery.isEmpty() && config.highlightColour != null) {
-            String lowerName = name.toLowerCase(Locale.getDefault());
-            String lowerQuery = currentQuery.toLowerCase(Locale.getDefault());
+        // 3. Highlight text via MultiSelectUtils (handles spaces & special characters)
+        holder.tvName.setText(MultiSelectUtils.highlightText(
+                item.getName(),
+                currentQuery,
+                config.highlightColour
+        ));
 
-            int startPos = lowerName.indexOf(lowerQuery);
-            if (startPos != -1) {
-                Spannable spannable = new SpannableString(name);
-                int endPos = startPos + currentQuery.length();
-
-                // 1. Use ForegroundColorSpan instead of TextAppearanceSpan for reliable coloring
-                spannable.setSpan(new ForegroundColorSpan(config.highlightColour),
-                        startPos, endPos, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-                // 2. Bold style set separately if desired
-                spannable.setSpan(new StyleSpan(Typeface.BOLD),
-                        startPos, endPos, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-                holder.tvName.setText(spannable);
-            } else {
-                holder.tvName.setText(name);
-            }
-        } else {
-            holder.tvName.setText(name);
-        }
-
-        // Toggle Checkmark Visibility and Icon
+        // 4. Container & Checkmark slot population via MultiSelectUtils
         if (holder.iconContainer != null) {
-            holder.iconContainer.removeAllViews();
-
             boolean isSelected = item.isSelected();
             int resId = isSelected ? config.checkOnResId : config.checkOffResId;
 
+            if (resId == 0 && isSelected) {
+                // Fallback default checkmark icon when selected and no custom resource set
+                resId = R.drawable.check_24px;
+            }
+
             if (resId != 0) {
-                Context context = holder.itemView.getContext();
-                String resourceType = context.getResources().getResourceTypeName(resId);
-
-                if ("layout".equalsIgnoreCase(resourceType)) {
-                    // 1. Layout Resource: Inflate custom view directly (tint ignored)
-                    LayoutInflater.from(context).inflate(resId, holder.iconContainer, true);
-                    holder.iconContainer.setVisibility(View.VISIBLE);
-                } else {
-                    // 2. Drawable Resource: Inflate container layout and apply optional tint
-                    View iconLayout = LayoutInflater.from(context)
-                            .inflate(R.layout.icon_container, holder.iconContainer, false);
-                    ImageView ivIcon = iconLayout.findViewById(R.id.lib_iv_icon);
-                    ivIcon.setImageResource(resId);
-
-                    if (config.iconTint != null) {
-                        androidx.core.widget.ImageViewCompat.setImageTintList(
-                                ivIcon,
-                                android.content.res.ColorStateList.valueOf(config.iconTint)
-                        );
-                    }
-
-                    holder.iconContainer.addView(iconLayout);
-                    holder.iconContainer.setVisibility(View.VISIBLE);
-                }
-            } else if (isSelected) {
-                // 3. Fallback default checkmark icon (applies tint if set)
-                Context context = holder.itemView.getContext();
-                View iconLayout = LayoutInflater.from(context)
-                        .inflate(R.layout.icon_container, holder.iconContainer, false);
-                ImageView ivIcon = iconLayout.findViewById(R.id.lib_iv_icon);
-                ivIcon.setImageResource(R.drawable.check_24px);
-
-                if (config.iconTint != null) {
-                    androidx.core.widget.ImageViewCompat.setImageTintList(
-                            ivIcon,
-                            android.content.res.ColorStateList.valueOf(config.iconTint)
-                    );
-                }
-
-                holder.iconContainer.addView(iconLayout);
-                holder.iconContainer.setVisibility(View.VISIBLE);
+                MultiSelectUtils.populateContainerContent(
+                        context,
+                        holder.iconContainer,
+                        resId,
+                        null,
+                        config.iconTint
+                );
             } else {
+                holder.iconContainer.removeAllViews();
                 holder.iconContainer.setVisibility(View.INVISIBLE);
             }
         }
 
+        // 5. OnClick selection behavior
         holder.itemView.setOnClickListener(v -> {
             item.setSelected(!item.isSelected());
 
@@ -243,7 +183,7 @@ public class MultiSelectFilterAdapter<T> extends RecyclerView.Adapter<MultiSelec
         return new Filter() {
             @Override
             protected FilterResults performFiltering(CharSequence constraint) {
-                currentQuery = (constraint == null) ? "" : constraint.toString().trim();
+                currentQuery = (constraint == null) ? "" : constraint.toString();
                 String cleanQuery = currentQuery.toLowerCase(Locale.getDefault()).replaceAll("[\\s+\\+\\.,\\-'\\|]+", "");
 
                 List<SelectableItem<T>> filteredList = new ArrayList<>();

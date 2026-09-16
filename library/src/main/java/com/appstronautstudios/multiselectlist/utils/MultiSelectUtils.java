@@ -3,8 +3,13 @@ package com.appstronautstudios.multiselectlist.utils;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
@@ -24,6 +29,8 @@ import androidx.core.widget.ImageViewCompat;
 
 import com.appstronautstudios.multiselectlist.R;
 import com.appstronautstudios.multiselectlist.model.MultiSelectFilterConfig;
+
+import java.util.Locale;
 
 public class MultiSelectUtils {
 
@@ -185,5 +192,75 @@ public class MultiSelectUtils {
         } else {
             container.setVisibility(View.GONE);
         }
+    }
+
+    public static void applyConfigPadding(@NonNull View view, @NonNull MultiSelectFilterConfig config) {
+        Context context = view.getContext();
+        int padH = config.paddingHorizontal != null ? dpToPx(context, config.paddingHorizontal) : 0;
+        int padV = config.paddingVertical != null ? dpToPx(context, config.paddingVertical) : 0;
+        view.setPadding(padH, padV, padH, padV);
+    }
+
+    public static CharSequence highlightText(@NonNull String fullText, @Nullable String query, @Nullable Integer highlightColor) {
+        if (query == null || highlightColor == null) {
+            return fullText;
+        }
+
+        // 1. Strip query to match the clean filter logic
+        String cleanQuery = query.toLowerCase(Locale.getDefault()).replaceAll("[\\s+\\+\\.,\\-'\\|]+", "");
+        if (cleanQuery.isEmpty()) {
+            return fullText;
+        }
+
+        String lowerText = fullText.toLowerCase(Locale.getDefault());
+
+        // 2. Build index map: cleanTextIndex -> originalTextIndex
+        StringBuilder cleanTextBuilder = new StringBuilder();
+        int[] indexMap = new int[fullText.length() + 1];
+        int cleanLength = 0;
+
+        for (int i = 0; i < fullText.length(); i++) {
+            char c = lowerText.charAt(i);
+            // Ignore spaces and special characters matching filter regex
+            if (!Character.isWhitespace(c) && c != '+' && c != '.' && c != ',' && c != '-' && c != '\'' && c != '|') {
+                indexMap[cleanLength] = i;
+                cleanTextBuilder.append(c);
+                cleanLength++;
+            }
+        }
+        indexMap[cleanLength] = fullText.length();
+
+        String cleanText = cleanTextBuilder.toString();
+        int matchIndex = cleanText.indexOf(cleanQuery);
+
+        if (matchIndex == -1) {
+            return fullText;
+        }
+
+        SpannableString spannable = new SpannableString(fullText);
+
+        // 3. Highlight all matching instances across clean boundaries
+        while (matchIndex != -1) {
+            int rawStart = indexMap[matchIndex];
+            int rawEnd = indexMap[matchIndex + cleanQuery.length()];
+
+            // If the match ends right before stripped characters, include trailing chars if needed or end at next mapped char
+            spannable.setSpan(
+                    new ForegroundColorSpan(highlightColor),
+                    rawStart,
+                    rawEnd,
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            );
+            spannable.setSpan(
+                    new StyleSpan(Typeface.BOLD),
+                    rawStart,
+                    rawEnd,
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            );
+
+            matchIndex = cleanText.indexOf(cleanQuery, matchIndex + 1);
+        }
+
+        return spannable;
     }
 }
