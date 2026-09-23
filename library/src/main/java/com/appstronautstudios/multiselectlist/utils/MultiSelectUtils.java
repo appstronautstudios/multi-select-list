@@ -283,20 +283,36 @@ public class MultiSelectUtils {
     @ColorInt
     public static int getSurfaceColor(@NonNull Context context) {
         TypedValue typedValue = new TypedValue();
+        int backgroundColor;
 
-        // 1. Material 3 Surface Container
-        if (context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorSurfaceContainerHigh, typedValue, true)) {
-            return typedValue.data;
-        }
-        // 2. Control Highlight / Surface variant fallback
-        if (context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorControlHighlight, typedValue, true)) {
-            return typedValue.data;
-        }
-        // 3. System Background fallback
-        if (context.getTheme().resolveAttribute(android.R.attr.colorBackground, typedValue, true)) {
-            return typedValue.data;
+        // fetch colorSurfaceContainerHigh from client or Material library (if exists)
+        int colorSurfaceContainerHighRes = context.getResources().getIdentifier("colorSurfaceContainerHigh", "attr", context.getPackageName());
+        if (colorSurfaceContainerHighRes == 0) {
+            colorSurfaceContainerHighRes = context.getResources().getIdentifier("colorSurfaceContainerHigh", "attr", "com.google.android.material");
         }
 
-        return 0xFFE0E0E0; // Safe default grey if theme resolution completely fails
+        // fetch colorSurface from client or Material library (if exists)
+        int colorSurfaceRes = context.getResources().getIdentifier("colorSurface", "attr", context.getPackageName());
+        if (colorSurfaceRes == 0) {
+            colorSurfaceRes = context.getResources().getIdentifier("colorSurface", "attr", "com.google.android.material");
+        }
+
+        if (colorSurfaceContainerHighRes != 0 && context.getTheme().resolveAttribute(colorSurfaceContainerHighRes, typedValue, true)) {
+            // Safe lookup for Material 3 container (avoids crashes if host app lacks Material library)
+            backgroundColor = typedValue.data;
+        } else if (colorSurfaceRes != 0 && context.getTheme().resolveAttribute(colorSurfaceRes, typedValue, true)) {
+            // Standard Material / AppCompat surface fallback
+            backgroundColor = typedValue.data;
+        } else if (context.getTheme().resolveAttribute(android.R.attr.colorControlHighlight, typedValue, true)) {
+            // Standard Framework attribute
+            backgroundColor = typedValue.data;
+        } else if (context.getTheme().resolveAttribute(android.R.attr.colorBackground, typedValue, true)) {
+            // System Background fallback
+            backgroundColor = typedValue.data;
+        } else {
+            backgroundColor = Color.LTGRAY;
+        }
+
+        return backgroundColor;
     }
 }
