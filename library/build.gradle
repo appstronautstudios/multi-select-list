@@ -37,7 +37,7 @@ afterEvaluate {
                 from components.release
                 groupId = 'com.github.appstronautstudios'
                 artifactId = 'multiselectlist'
-                version = '0.0.7'
+                version = '0.0.8'
             }
         }
     }
@@ -50,4 +50,5 @@ dependencies {
 
     implementation 'androidx.appcompat:appcompat:1.7.1'
     implementation 'androidx.recyclerview:recyclerview:1.4.0'
+    implementation 'com.google.android.material:material:1.11.0'
 }

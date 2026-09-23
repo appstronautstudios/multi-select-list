@@ -19,6 +19,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import androidx.annotation.AnyRes;
+import androidx.annotation.AttrRes;
 import androidx.annotation.ColorInt;
 import androidx.annotation.DimenRes;
 import androidx.annotation.NonNull;
@@ -145,7 +146,7 @@ public class MultiSelectUtils {
         GradientDrawable bg = new GradientDrawable();
         bg.setShape(GradientDrawable.RECTANGLE);
         bg.setCornerRadius(8 * density);
-        bg.setColor(Color.parseColor("#F1F3F4"));
+        bg.setColor(getSurfaceColor(context));
         searchView.setBackground(bg);
     }
 
@@ -262,5 +263,40 @@ public class MultiSelectUtils {
         }
 
         return spannable;
+    }
+
+    /**
+     * Resolves the first available color attribute from the host theme, falling back to a default color.
+     */
+    @ColorInt
+    public static int resolveThemeColor(@NonNull Context context, @AttrRes int attrRes, @ColorInt int fallbackColor) {
+        TypedValue typedValue = new TypedValue();
+        if (context.getTheme().resolveAttribute(attrRes, typedValue, true)) {
+            return typedValue.data;
+        }
+        return fallbackColor;
+    }
+
+    /**
+     * Resolves a suitable background surface color across Material 3, AppCompat, and standard Android themes.
+     */
+    @ColorInt
+    public static int getSurfaceColor(@NonNull Context context) {
+        TypedValue typedValue = new TypedValue();
+
+        // 1. Material 3 Surface Container
+        if (context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorSurfaceContainerHigh, typedValue, true)) {
+            return typedValue.data;
+        }
+        // 2. Control Highlight / Surface variant fallback
+        if (context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorControlHighlight, typedValue, true)) {
+            return typedValue.data;
+        }
+        // 3. System Background fallback
+        if (context.getTheme().resolveAttribute(android.R.attr.colorBackground, typedValue, true)) {
+            return typedValue.data;
+        }
+
+        return 0xFFE0E0E0; // Safe default grey if theme resolution completely fails
     }
 }
